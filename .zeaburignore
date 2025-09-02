@@ -1,0 +1,14 @@
+node_modules
+.git
+.env
+.env.local
+.env.development
+*.log
+.DS_Store
+.vscode
+.idea
+*.md
+admin_token.json
+
+# Keep only production env
+!.env.production
