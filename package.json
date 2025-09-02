@@ -5,10 +5,11 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "npm run db:generate && tsc && npm run client:build",
-    "start": "npm run db:push && npm run db:seed && node dist/index.js",
+    "start": "npm run db:deploy && npm run db:seed && node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
+    "db:deploy": "prisma migrate deploy",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "db:seed": "ts-node prisma/seed.ts",

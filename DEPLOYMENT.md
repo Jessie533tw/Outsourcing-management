@@ -26,7 +26,7 @@
 NODE_ENV=production
 JWT_SECRET=your-super-secret-jwt-key-for-construction-management-system-2024-production
 JWT_EXPIRES_IN=7d
-DATABASE_URL=file:./prod.db
+# DATABASE_URL will be automatically provided by Zeabur PostgreSQL service
 UPLOAD_PATH=./uploads
 PORT=3001
 ```
