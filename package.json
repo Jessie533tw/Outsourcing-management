@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "cp .env.build .env.temp && (DATABASE_URL=postgresql://build:build@localhost:5432/build prisma generate || true) && tsc && npm run client:build",
-    "start": "npm run db:deploy && npm run db:seed && node dist/index.js",
+    "start": "prisma generate && node dist/index.js",
+    "start:full": "npm run db:deploy && npm run db:seed && node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
