@@ -1,0 +1,19 @@
+{
+  "name": "construction-procurement-system",
+  "services": [
+    {
+      "name": "construction-app",
+      "buildCommand": "npm run build",
+      "startCommand": "npm start",
+      "environment": {
+        "NODE_ENV": "production"
+      },
+      "ports": [
+        {
+          "containerPort": 5000,
+          "protocol": "http"
+        }
+      ]
+    }
+  ]
+}
