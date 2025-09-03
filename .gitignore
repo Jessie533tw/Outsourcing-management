@@ -59,4 +59,5 @@ uploads/*
 
 # Temporary files
 tmp/
-temp/
+temp/Outsourcing-management/
+*.tar.gz

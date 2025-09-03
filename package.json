@@ -1,7 +1,7 @@
 {
-  "name": "construction-management",
+  "name": "outsourcing-management",
   "version": "1.0.0",
-  "description": "建設公司發包管理系統",
+  "description": "外包發包管理系統",
   "main": "dist/index.js",
   "scripts": {
     "build": "npm run db:generate && tsc && npm run client:build",
@@ -19,8 +19,8 @@
     "install:all": "npm install && cd client && npm install",
     "postinstall": "prisma generate"
   },
-  "keywords": ["construction", "management", "procurement"],
-  "author": "Construction Management System",
+  "keywords": ["outsourcing", "management", "procurement"],
+  "author": "Outsourcing Management System",
   "license": "MIT",
   "dependencies": {
     "@prisma/client": "^5.22.0",

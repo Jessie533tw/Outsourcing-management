@@ -1,4 +1,4 @@
-# 建設公司發包管理系統 - Zeabur 部署指南
+# 外包發包管理系統 - Zeabur 部署指南
 
 ## 🚀 Zeabur 部署步驟
 
@@ -24,7 +24,7 @@
 
 ```bash
 NODE_ENV=production
-JWT_SECRET=your-super-secret-jwt-key-for-construction-management-system-2024-production
+JWT_SECRET=your-super-secret-jwt-key-for-outsourcing-management-system-2024-production
 JWT_EXPIRES_IN=7d
 # DATABASE_URL will be automatically provided by Zeabur PostgreSQL service
 UPLOAD_PATH=./uploads
