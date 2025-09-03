@@ -4,8 +4,8 @@
   "description": "外包發包管理系統",
   "main": "dist/index.js",
   "scripts": {
-    "build": "npm run db:generate && tsc && npm run client:build",
-    "start": "npm run db:deploy && npm run db:seed && node dist/index.js",
+    "build": "tsc && npm run client:build",
+    "start": "npm run db:generate && npm run db:deploy && npm run db:seed && node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
