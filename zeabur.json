@@ -1,8 +1,8 @@
 {
-  "name": "construction-procurement-system",
+  "name": "outsourcing-management",
   "services": [
     {
-      "name": "construction-app",
+      "name": "outsourcing-app",
       "buildCommand": "npm run build",
       "startCommand": "npm start",
       "environment": {
