@@ -19,27 +19,35 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/dist')));
 }
 
-// 數據庫連接
+// 數據庫連接 - 異步處理，不阻止服務器啟動
 connectDatabase().catch(error => {
   console.error('數據庫連接失敗:', error);
-  process.exit(1);
+  console.log('服務器將繼續運行，但數據庫功能可能不可用');
 });
 
-const authRoutes = require('./routes/auth');
-const projectRoutes = require('./routes/projects');
-const vendorRoutes = require('./routes/vendors');
-const materialRoutes = require('./routes/materials');
-const purchaseRoutes = require('./routes/purchases');
-const progressRoutes = require('./routes/progress');
-const reportRoutes = require('./routes/reports');
+// 安全加載路由
+try {
+  const authRoutes = require('./routes/auth');
+  const projectRoutes = require('./routes/projects');
+  const vendorRoutes = require('./routes/vendors');
+  const materialRoutes = require('./routes/materials');
+  const purchaseRoutes = require('./routes/purchases');
+  const progressRoutes = require('./routes/progress');
+  const reportRoutes = require('./routes/reports');
 
-app.use('/api/auth', authRoutes);
-app.use('/api/projects', projectRoutes);
-app.use('/api/vendors', vendorRoutes);
-app.use('/api/materials', materialRoutes);
-app.use('/api/purchases', purchaseRoutes);
-app.use('/api/progress', progressRoutes);
-app.use('/api/reports', reportRoutes);
+  app.use('/api/auth', authRoutes);
+  app.use('/api/projects', projectRoutes);
+  app.use('/api/vendors', vendorRoutes);
+  app.use('/api/materials', materialRoutes);
+  app.use('/api/purchases', purchaseRoutes);
+  app.use('/api/progress', progressRoutes);
+  app.use('/api/reports', reportRoutes);
+  
+  console.log('所有路由已成功加載');
+} catch (error) {
+  console.error('路由加載失敗:', error);
+  console.log('服務器將以基本模式運行');
+}
 
 // API 健康檢查
 app.get('/api/health', (req, res) => {
@@ -70,6 +78,16 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`服務器運行在端口 ${PORT}`);
+
+console.log('正在啟動建設公司發包管理系統...');
+console.log('環境:', process.env.NODE_ENV);
+console.log('Node.js 版本:', process.version);
+console.log('PORT:', PORT);
+
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`✅ 服務器成功啟動在端口 ${PORT}`);
+  console.log(`✅ 健康檢查 URL: http://localhost:${PORT}/api/health`);
+}).on('error', (error) => {
+  console.error('❌ 服務器啟動失敗:', error);
+  process.exit(1);
 });
