@@ -2,33 +2,18 @@
 
 # 確保環境變數存在
 if [ -z "$DATABASE_URL" ]; then
-  echo "ERROR: DATABASE_URL 環境變數未設定"
-  exit 1
+  echo "WARNING: DATABASE_URL 環境變數未設定，但繼續啟動..."
 fi
 
-# 生成 Prisma Client
-echo "生成 Prisma Client..."
-npx prisma generate
+# 設定 NODE_ENV
+export NODE_ENV=production
 
-# 等待資料庫準備就緒
-echo "等待資料庫連接..."
-for i in {1..30}; do
-  if npx prisma db push --accept-data-loss --skip-seed > /dev/null 2>&1; then
-    echo "資料庫連接成功"
-    break
-  fi
-  echo "等待資料庫... ($i/30)"
-  sleep 2
-done
-
-# 部署資料庫遷移（如果需要）
-echo "部署資料庫遷移..."
-npx prisma migrate deploy || echo "遷移失敗，繼續啟動..."
-
-# 播種資料
-echo "播種初始資料..."
-npx prisma db seed || echo "播種失敗，繼續啟動..."
+# 顯示環境資訊
+echo "Node.js 版本: $(node --version)"
+echo "NPM 版本: $(npm --version)"
+echo "環境: $NODE_ENV"
+echo "埠口: $PORT"
 
 # 啟動應用
-echo "啟動應用..."
+echo "啟動建設公司發包管理系統..."
 node src/app.js
