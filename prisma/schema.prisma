@@ -1,0 +1,616 @@
+// 外包發包管理系統 - 完整業務流程
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== 用戶管理 ====================
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  username    String   @unique
+  password    String
+  name        String
+  role        String   @default("STAFF")
+  department  String?
+  phone       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 關聯
+  createdProjects      Project[]              @relation("CreatedBy")
+  managedProjects      Project[]              @relation("Manager")
+  approvedBudgets      Budget[]               @relation("ApprovedBy")
+  createdInquiries     Inquiry[]              @relation("CreatedBy")
+  createdPurchases     PurchaseOrder[]        @relation("CreatedBy")
+  approvedPurchases    PurchaseOrder[]        @relation("ApprovedBy")
+  createdMaterialLists MaterialAnalysisList[] @relation("CreatedBy")
+  notifications        UserNotification[]
+
+  @@map("users")
+}
+
+// ==================== 專案管理 ====================
+model Project {
+  id              String   @id @default(cuid())
+  name            String
+  code            String   @unique
+  description     String?
+  location        String?
+  startDate       DateTime?
+  endDate         DateTime?
+  estimatedCost   Float    @default(0)
+  actualCost      Float    @default(0)
+  status          String   @default("PLANNING")
+  contractNumber  String?  @unique
+  clientName      String?
+  clientContact   String?
+  folderPath      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // 關聯
+  createdById String
+  createdBy   User   @relation("CreatedBy", fields: [createdById], references: [id])
+  managerId   String?
+  manager     User?  @relation("Manager", fields: [managerId], references: [id])
+
+  // 核心業務流程
+  materialAnalysisLists MaterialAnalysisList[]
+  budgets               Budget[]
+  inquiries             Inquiry[]
+  priceComparisons      PriceComparison[]
+  purchaseOrders        PurchaseOrder[]
+  schedules             ConstructionSchedule[]
+  progressReports       ProgressReport[]
+  contracts             Contract[]
+  vouchers              Voucher[]
+  ledgerReports         LedgerReport[]
+
+  @@map("projects")
+}
+
+// ==================== 1. 工料分析表 ====================
+model MaterialAnalysisList {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  description String?
+  version     Int      @default(1)
+  status      String   @default("DRAFT")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdById String
+  createdBy   User                   @relation("CreatedBy", fields: [createdById], references: [id])
+  items       MaterialAnalysisItem[]
+  inquiries   Inquiry[]
+
+  @@unique([projectId, version])
+  @@map("material_analysis_lists")
+}
+
+model MaterialAnalysisItem {
+  id            String   @id @default(cuid())
+  listId        String
+  category      String
+  item          String
+  unit          String
+  quantity      Float
+  unitPrice     Float    @default(0)
+  totalPrice    Float    @default(0)
+  specification String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  list MaterialAnalysisList @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@map("material_analysis_items")
+}
+
+// ==================== 2. 預算表 ====================
+model Budget {
+  id              String    @id @default(cuid())
+  projectId       String
+  version         Int       @default(1)
+  totalAmount     Float
+  usedAmount      Float     @default(0)
+  remainingAmount Float     @default(0)
+  status          String    @default("DRAFT")
+  submittedAt     DateTime?
+  approvedAt      DateTime?
+  lockedAt        DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  approvedById String?
+  approvedBy   User?        @relation("ApprovedBy", fields: [approvedById], references: [id])
+  items        BudgetItem[]
+
+  @@unique([projectId, version])
+  @@map("budgets")
+}
+
+model BudgetItem {
+  id         String   @id @default(cuid())
+  budgetId   String
+  category   String
+  item       String
+  unit       String
+  quantity   Float
+  unitPrice  Float
+  totalPrice Float
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  budget Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  @@map("budget_items")
+}
+
+// ==================== 3. 廠商管理 ====================
+model Supplier {
+  id            String   @id @default(cuid())
+  name          String
+  code          String   @unique
+  contactPerson String?
+  phone         String?
+  email         String?
+  address       String?
+  taxNumber     String?
+  bankAccount   String?
+  paymentTerms  String?
+  rating        Int?     @default(0)
+  isActive      Boolean  @default(true)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // 關聯
+  quotes              Quote[]
+  purchaseOrders      PurchaseOrder[]
+  priceComparisons    PriceComparisonItem[]
+  supplierInquiries   SupplierInquiry[]
+  selectedComparisons PriceComparison[] @relation("SelectedSupplier")
+
+  @@map("suppliers")
+}
+
+// ==================== 4. 詢價單 ====================
+model Inquiry {
+  id            String   @id @default(cuid())
+  projectId     String
+  listId        String?
+  inquiryNumber String   @unique
+  title         String
+  description   String?
+  dueDate       DateTime
+  status        String   @default("SENT")
+  sentAt        DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  project                Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  materialAnalysisList   MaterialAnalysisList? @relation(fields: [listId], references: [id])
+  createdById            String
+  createdBy              User                  @relation("CreatedBy", fields: [createdById], references: [id])
+  items                  InquiryItem[]
+  quotes                 Quote[]
+  supplierInquiries      SupplierInquiry[]
+
+  @@map("inquiries")
+}
+
+model InquiryItem {
+  id            String   @id @default(cuid())
+  inquiryId     String
+  category      String
+  item          String
+  unit          String
+  quantity      Float
+  specification String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  inquiry Inquiry @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+
+  @@map("inquiry_items")
+}
+
+model SupplierInquiry {
+  id         String    @id @default(cuid())
+  inquiryId  String
+  supplierId String
+  sentAt     DateTime  @default(now())
+  isReplied  Boolean   @default(false)
+  repliedAt  DateTime?
+
+  inquiry  Inquiry  @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id])
+
+  @@unique([inquiryId, supplierId])
+  @@map("supplier_inquiries")
+}
+
+// ==================== 5. 報價單 ====================
+model Quote {
+  id          String    @id @default(cuid())
+  inquiryId   String
+  supplierId  String
+  quoteNumber String    @unique
+  validUntil  DateTime
+  totalAmount Float     @default(0)
+  notes       String?
+  status      String    @default("PENDING")
+  submittedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  inquiry  Inquiry     @relation(fields: [inquiryId], references: [id], onDelete: Cascade)
+  supplier Supplier    @relation(fields: [supplierId], references: [id])
+  items    QuoteItem[]
+
+  @@unique([inquiryId, supplierId])
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id           String   @id @default(cuid())
+  quoteId      String
+  category     String
+  item         String
+  unit         String
+  quantity     Float
+  unitPrice    Float
+  totalPrice   Float
+  deliveryDays Int?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  quote Quote @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+
+  @@map("quote_items")
+}
+
+// ==================== 6. 計價比較表 ====================
+model PriceComparison {
+  id                 String   @id @default(cuid())
+  projectId          String
+  inquiryId          String
+  name               String
+  status             String   @default("COMPARING")
+  selectedSupplierId String?
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  project          Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  items            PriceComparisonItem[]
+  selectedSupplier Supplier?             @relation("SelectedSupplier", fields: [selectedSupplierId], references: [id])
+
+  @@unique([projectId, inquiryId])
+  @@map("price_comparisons")
+}
+
+model PriceComparisonItem {
+  id           String   @id @default(cuid())
+  comparisonId String
+  supplierId   String
+  category     String
+  item         String
+  unit         String
+  quantity     Float
+  unitPrice    Float
+  totalPrice   Float
+  deliveryDays Int?
+  isSelected   Boolean  @default(false)
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  comparison PriceComparison @relation(fields: [comparisonId], references: [id], onDelete: Cascade)
+  supplier   Supplier        @relation(fields: [supplierId], references: [id])
+
+  @@map("price_comparison_items")
+}
+
+// ==================== 7. 採購單 ====================
+model PurchaseOrder {
+  id               String    @id @default(cuid())
+  projectId        String
+  supplierId       String
+  comparisonId     String?
+  orderNumber      String    @unique
+  orderDate        DateTime  @default(now())
+  plannedOrderDate DateTime?
+  expectedDelivery DateTime?
+  actualDelivery   DateTime?
+  totalAmount      Float     @default(0)
+  paymentTerms     String?
+  status           String    @default("DRAFT")
+  notes            String?
+  contractPath     String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  project        Project                   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  supplier       Supplier                  @relation(fields: [supplierId], references: [id])
+  createdById    String
+  createdBy      User                      @relation("CreatedBy", fields: [createdById], references: [id])
+  approvedById   String?
+  approvedBy     User?                     @relation("ApprovedBy", fields: [approvedById], references: [id])
+  items          PurchaseItem[]
+  scheduleItems  ScheduleItem[]
+  materialDetails MaterialPurchaseDetail[]
+  progressDetails ProgressPurchaseDetail[]
+  deliveries     DeliverySchedule[]
+  payments       Payment[]
+  vouchers       Voucher[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseItem {
+  id              String   @id @default(cuid())
+  purchaseOrderId String
+  category        String
+  item            String
+  unit            String
+  quantity        Float
+  unitPrice       Float
+  totalPrice      Float
+  receivedQty     Float    @default(0)
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  @@map("purchase_items")
+}
+
+// ==================== 8. 發包施工進度表 ====================
+model ConstructionSchedule {
+  id              String   @id @default(cuid())
+  projectId       String
+  name            String
+  startDate       DateTime
+  endDate         DateTime
+  totalDays       Int
+  currentProgress Float    @default(0)
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  project Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  items   ScheduleItem[]
+
+  @@map("construction_schedules")
+}
+
+model ScheduleItem {
+  id                String    @id @default(cuid())
+  scheduleId        String
+  purchaseOrderId   String?
+  activity          String
+  plannedStartDate  DateTime
+  plannedEndDate    DateTime
+  actualStartDate   DateTime?
+  actualEndDate     DateTime?
+  currentProgress   Float     @default(0)
+  status            String    @default("NOT_STARTED")
+  isDelayed         Boolean   @default(false)
+  delayDays         Int       @default(0)
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  schedule      ConstructionSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  purchaseOrder PurchaseOrder?       @relation(fields: [purchaseOrderId], references: [id])
+
+  @@map("schedule_items")
+}
+
+// ==================== 9. 工程採購明細表 ====================
+model ProgressPurchaseDetail {
+  id              String    @id @default(cuid())
+  projectId       String
+  purchaseOrderId String
+  scheduleItemId  String?
+  phase           String
+  activity        String
+  amount          Float
+  progressRate    Float     @default(0)
+  isPaid          Boolean   @default(false)
+  paymentDate     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  @@map("progress_purchase_details")
+}
+
+// ==================== 10. 工料採購明細表 ====================
+model MaterialPurchaseDetail {
+  id              String    @id @default(cuid())
+  projectId       String
+  purchaseOrderId String
+  category        String
+  item            String
+  unit            String
+  quantity        Float
+  unitPrice       Float
+  totalPrice      Float
+  deliveredQty    Float     @default(0)
+  usedQty         Float     @default(0)
+  isReceived      Boolean   @default(false)
+  receivedDate    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  @@map("material_purchase_details")
+}
+
+// ==================== 11. 交貨管理 ====================
+model DeliverySchedule {
+  id              String    @id @default(cuid())
+  purchaseOrderId String
+  scheduledDate   DateTime
+  actualDate      DateTime?
+  quantity        Float
+  description     String?
+  status          String    @default("SCHEDULED")
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  @@map("delivery_schedules")
+}
+
+// ==================== 12. 付款管理 ====================
+model Payment {
+  id              String    @id @default(cuid())
+  purchaseOrderId String
+  amount          Float
+  paymentDate     DateTime  @default(now())
+  dueDate         DateTime?
+  method          String?
+  reference       String?
+  status          String    @default("PENDING")
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// ==================== 13. 傳票系統 ====================
+model Voucher {
+  id              String        @id @default(cuid())
+  projectId       String
+  purchaseOrderId String?
+  voucherNumber   String        @unique
+  date            DateTime      @default(now())
+  amount          Float
+  type            String
+  description     String
+  accountCode     String?
+  isPosted        Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  project       Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  purchaseOrder PurchaseOrder? @relation(fields: [purchaseOrderId], references: [id])
+
+  @@map("vouchers")
+}
+
+// ==================== 14. 合約管理 ====================
+model Contract {
+  id              String   @id @default(cuid())
+  projectId       String
+  contractNumber  String   @unique
+  title           String
+  signingDate     DateTime @default(now())
+  startDate       DateTime?
+  endDate         DateTime?
+  amount          Float
+  status          String   @default("DRAFT")
+  filePath        String?
+  pdfPath         String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("contracts")
+}
+
+// ==================== 15. 進度報告 ====================
+model ProgressReport {
+  id           String   @id @default(cuid())
+  projectId    String
+  reportDate   DateTime @default(now())
+  period       String
+  overview     String
+  achievements String?
+  issues       String?
+  nextPlan     String?
+  progressRate Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("progress_reports")
+}
+
+// ==================== 16. 總帳報告 ====================
+model LedgerReport {
+  id           String   @id @default(cuid())
+  projectId    String
+  reportNumber String   @unique
+  startDate    DateTime
+  endDate      DateTime
+  totalIncome  Float    @default(0)
+  totalExpense Float    @default(0)
+  netAmount    Float    @default(0)
+  isCompleted  Boolean  @default(false)
+  filePath     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("ledger_reports")
+}
+
+// ==================== 17. 通知系統 ====================
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      String   @default("INFO")
+  data      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users UserNotification[]
+
+  @@map("notifications")
+}
+
+model UserNotification {
+  id             String    @id @default(cuid())
+  userId         String
+  notificationId String
+  isRead         Boolean   @default(false)
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, notificationId])
+  @@map("user_notifications")
+}

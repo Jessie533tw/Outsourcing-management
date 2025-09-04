@@ -1,0 +1,7 @@
+{
+  "build_command": "npm run build",
+  "start_command": "chmod +x start.sh && ./start.sh",
+  "install_command": "npm run install:all",
+  "node_version": "18",
+  "services": ["postgresql"]
+}
