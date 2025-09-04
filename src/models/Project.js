@@ -9,61 +9,52 @@ module.exports = (sequelize) => {
     },
     projectId: {
       type: DataTypes.STRING,
-    required: true,
-    unique: true
-  },
-  name: {
-    type: String,
-    required: true
-  },
-  description: String,
-  location: String,
-  client: String,
-  startDate: Date,
-  endDate: Date,
-  estimatedCost: Number,
-  actualCost: {
-    type: Number,
-    default: 0
-  },
-  budget: {
-    total: Number,
-    remaining: Number,
-    allocated: Number
-  },
-  status: {
-    type: String,
-    enum: ['planning', 'pending_approval', 'approved', 'in_progress', 'completed', 'suspended'],
-    default: 'planning'
-  },
-  manager: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
-  approvals: [{
-    approver: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+      allowNull: false,
+      unique: true
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    description: {
+      type: DataTypes.TEXT
+    },
+    location: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    client: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    startDate: {
+      type: DataTypes.DATE,
+      allowNull: false
+    },
+    endDate: {
+      type: DataTypes.DATE,
+      allowNull: false
+    },
+    estimatedCost: {
+      type: DataTypes.DECIMAL(15, 2),
+      allowNull: false,
+      defaultValue: 0
+    },
+    actualCost: {
+      type: DataTypes.DECIMAL(15, 2),
+      defaultValue: 0
     },
     status: {
-      type: String,
-      enum: ['pending', 'approved', 'rejected']
+      type: DataTypes.ENUM('planning', 'pending_approval', 'approved', 'in_progress', 'completed', 'suspended'),
+      defaultValue: 'planning'
     },
-    comment: String,
-    approvedAt: Date
-  }],
-  contractNumber: String,
-  documents: [{
-    name: String,
-    path: String,
-    type: String,
-    uploadedAt: {
-      type: Date,
-      default: Date.now
+    contractNumber: {
+      type: DataTypes.STRING
     }
-  }]
-}, {
-  timestamps: true
-});
+  }, {
+    tableName: 'projects',
+    timestamps: true
+  });
 
-module.exports = mongoose.model('Project', projectSchema);
+  return Project;
+};
