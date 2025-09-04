@@ -31,4 +31,4 @@ npx prisma db seed || echo "播種失敗，繼續啟動..."
 
 # 啟動應用
 echo "啟動應用..."
-node dist/index.js
+node src/app.js
