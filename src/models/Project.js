@@ -1,8 +1,14 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
 
-const projectSchema = new mongoose.Schema({
-  projectId: {
-    type: String,
+module.exports = (sequelize) => {
+  const Project = sequelize.define('Project', {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    projectId: {
+      type: DataTypes.STRING,
     required: true,
     unique: true
   },

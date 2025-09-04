@@ -19,11 +19,25 @@ if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '../client/dist')));
 }
 
-// 數據庫連接 - 異步處理，不阻止服務器啟動
-connectDatabase().catch(error => {
-  console.error('數據庫連接失敗:', error);
-  console.log('服務器將繼續運行，但數據庫功能可能不可用');
-});
+// 數據庫連接和模型初始化
+connectDatabase()
+  .then(async () => {
+    const { initModels } = require('./models');
+    await initModels();
+    console.log('數據庫連接成功，模型已初始化');
+    
+    // 同步數據庫表
+    const { getSequelize } = require('./config/database');
+    const sequelize = getSequelize();
+    if (process.env.NODE_ENV !== 'production') {
+      await sequelize.sync({ alter: true });
+      console.log('數據庫表已同步');
+    }
+  })
+  .catch(error => {
+    console.error('數據庫連接失敗:', error);
+    console.log('服務器將繼續運行，但數據庫功能可能不可用');
+  });
 
 // 安全加載路由
 try {

@@ -1,5 +1,5 @@
 {
-  "build_command": "npm install",
+  "build_command": "npm install && npm run install-client",
   "start_command": "NODE_ENV=production node src/app.js",
   "install_command": "npm install",
   "node_version": "18",

@@ -58,15 +58,9 @@ const connectPostgreSQL = async () => {
 };
 
 const connectDatabase = async () => {
-  const usePostgres = process.env.DATABASE_URL || process.env.POSTGRES_URL;
-  
-  if (usePostgres) {
-    console.log('使用 PostgreSQL 數據庫');
-    return await connectPostgreSQL();
-  } else {
-    console.log('使用 MongoDB 數據庫');
-    return await connectMongoDB();
-  }
+  // 使用 PostgreSQL 作為主要數據庫
+  console.log('使用 PostgreSQL 數據庫');
+  return await connectPostgreSQL();
 };
 
 const getSequelize = () => {
